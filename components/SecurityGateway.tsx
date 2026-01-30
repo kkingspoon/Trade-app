@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ShieldCheckIcon, CpuChipIcon, SparklesIcon } from './Icons';
 
@@ -52,39 +51,40 @@ export const SecurityGateway: React.FC<SecurityGatewayProps> = ({ onAuthenticate
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/10 blur-[120px] rounded-full" />
         <div className="absolute top-1/4 left-1/4 w-[300px] h-[300px] bg-purple-500/10 blur-[100px] rounded-full" />
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-blue-500/5 blur-[100px] rounded-full" />
       </div>
 
-      <div className="relative z-10 w-full max-w-md animate-in fade-in zoom-in-95 duration-700">
-        <div className="glass-panel border-cyan-500/20 rounded-[40px] p-10 flex flex-col items-center text-center shadow-2xl">
+      <div className="relative z-10 w-full max-w-md animate-in fade-in zoom-in-95 duration-1000">
+        <div className="glass-panel border-cyan-500/20 rounded-[40px] p-10 flex flex-col items-center text-center shadow-[0_0_100px_rgba(0,0,0,0.5)]">
           <div className="mb-8">
-            <h1 className="font-space-grotesk text-3xl font-black tracking-tight text-white mb-2">AURA ELITE</h1>
+            <h1 className="font-space-grotesk text-4xl font-black tracking-tight text-white mb-2 italic">AURA ELITE</h1>
             <p className="text-[10px] font-mono text-cyan-500 uppercase tracking-[0.4em] font-bold">Secure Access Terminal</p>
           </div>
 
           <div className="relative mb-12 group">
             {/* Visual Scanner Ring */}
-            <div className={`absolute inset-0 -m-4 border-2 rounded-full border-cyan-500/20 transition-all duration-1000 ${step === 'scanning' ? 'animate-ping' : ''}`} />
-            <div className={`absolute inset-0 -m-2 border-2 rounded-full border-cyan-500/10 transition-all duration-700 ${step === 'scanning' ? 'scale-110 opacity-0' : 'scale-100 opacity-100'}`} />
+            <div className={`absolute inset-0 -m-6 border-2 rounded-full border-cyan-500/20 transition-all duration-1000 ${step === 'scanning' ? 'animate-[ping_1.5s_infinite]' : 'opacity-0'}`} />
+            <div className={`absolute inset-0 -m-3 border-2 rounded-full border-cyan-500/10 transition-all duration-700 ${step === 'scanning' ? 'scale-110 opacity-100' : 'scale-100 opacity-0'}`} />
             
             <button
               onClick={startScan}
               disabled={isAuthenticating}
-              className={`relative h-32 w-32 rounded-full flex items-center justify-center transition-all duration-500 border-2 overflow-hidden ${
-                step === 'granted' ? 'bg-green-500/20 border-green-500 shadow-[0_0_40px_rgba(34,197,94,0.3)]' :
-                step === 'scanning' ? 'bg-cyan-500/20 border-cyan-500 shadow-[0_0_40px_rgba(6,182,212,0.3)]' :
-                'bg-slate-900 border-slate-700 hover:border-cyan-500 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.2)]'
+              className={`relative h-36 w-36 rounded-full flex items-center justify-center transition-all duration-500 border-2 overflow-hidden ${
+                step === 'granted' ? 'bg-green-500/20 border-green-500 shadow-[0_0_50px_rgba(34,197,94,0.4)]' :
+                step === 'scanning' ? 'bg-cyan-500/20 border-cyan-500 shadow-[0_0_50px_rgba(6,182,212,0.4)]' :
+                'bg-slate-900 border-slate-700 hover:border-cyan-500 group-hover:shadow-[0_0_30px_rgba(6,182,212,0.25)]'
               }`}
             >
               {step === 'scanning' && (
-                <div className="absolute top-0 left-0 right-0 h-1 bg-cyan-400 shadow-[0_0_10px_#22d3ee] animate-[scan_2s_ease-in-out_infinite]" />
+                <div className="absolute top-0 left-0 right-0 h-1 bg-cyan-400 shadow-[0_0_15px_#22d3ee] animate-[scan_2s_ease-in-out_infinite] z-20" />
               )}
               {step === 'granted' ? (
                 <ShieldCheckIcon className="h-16 w-16 text-green-400 animate-in zoom-in-50" />
               ) : (
-                <div className="flex flex-col items-center">
-                   <CpuChipIcon className={`h-12 w-12 transition-all duration-500 ${step === 'scanning' ? 'text-cyan-400' : 'text-slate-500'}`} />
-                   <span className={`text-[8px] font-mono mt-2 font-bold ${step === 'scanning' ? 'text-cyan-400' : 'text-slate-600'}`}>
-                    {step === 'scanning' ? 'VERIFYING' : 'SECURE SYNC'}
+                <div className="flex flex-col items-center z-10">
+                   <CpuChipIcon className={`h-14 w-14 transition-all duration-500 ${step === 'scanning' ? 'text-cyan-400' : 'text-slate-500'}`} />
+                   <span className={`text-[9px] font-mono mt-3 font-black tracking-widest ${step === 'scanning' ? 'text-cyan-400' : 'text-slate-500'}`}>
+                    {step === 'scanning' ? 'VERIFYING' : 'INITIALIZE'}
                    </span>
                 </div>
               )}
@@ -94,9 +94,12 @@ export const SecurityGateway: React.FC<SecurityGatewayProps> = ({ onAuthenticate
           <div className="w-full space-y-6">
              <div className="flex flex-col space-y-4">
                <label className="flex items-center justify-between cursor-pointer group px-4 py-3 bg-slate-900/50 rounded-2xl border border-slate-800 hover:border-slate-700 transition-all">
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-3 text-left">
                     <SparklesIcon className="h-4 w-4 text-purple-400" />
-                    <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">Enable Biometrics</span>
+                    <div>
+                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest block">Biometrics</span>
+                        <span className="text-[8px] text-slate-500 uppercase font-mono tracking-tight">Facial / Thumb ID</span>
+                    </div>
                   </div>
                   <button 
                     type="button"
@@ -108,9 +111,12 @@ export const SecurityGateway: React.FC<SecurityGatewayProps> = ({ onAuthenticate
                </label>
 
                <label className="flex items-center justify-between cursor-pointer group px-4 py-3 bg-slate-900/50 rounded-2xl border border-slate-800 hover:border-slate-700 transition-all">
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-3 text-left">
                     <ShieldCheckIcon className="h-4 w-4 text-cyan-400" />
-                    <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">Persistent Session</span>
+                    <div>
+                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest block">Auto-Sync</span>
+                        <span className="text-[8px] text-slate-500 uppercase font-mono tracking-tight">Remember Device</span>
+                    </div>
                   </div>
                   <button 
                     type="button"
@@ -123,16 +129,16 @@ export const SecurityGateway: React.FC<SecurityGatewayProps> = ({ onAuthenticate
              </div>
 
              <div className="pt-4">
-                <p className="text-[10px] text-slate-500 font-mono uppercase tracking-widest leading-relaxed">
+                <p className="text-[10px] text-slate-500 font-mono uppercase tracking-[0.2em] leading-relaxed font-bold opacity-60">
                   Decentralized Auth Node <br />
-                  v3.1.2 // SECURE_SOCKET_LAYER_V2
+                  <span className="text-slate-700">v3.1.2 // SECURE_SOCKET_LAYER_V2</span>
                 </p>
              </div>
           </div>
         </div>
         
-        <div className="mt-8 text-center text-[10px] text-slate-600 font-mono animate-pulse">
-          // AWAITING SYSTEM HANDSHAKE...
+        <div className="mt-8 text-center text-[10px] text-slate-600 font-mono animate-pulse tracking-[0.5em] uppercase">
+          // Awaiting Handshake
         </div>
       </div>
 
