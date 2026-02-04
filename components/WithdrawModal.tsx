@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { WalletState } from '../types';
 import { XMarkIcon, WalletIcon, ShieldCheckIcon, ArrowDownCircleIcon, ArrowTrendingUpIcon } from './Icons';
 
@@ -9,14 +8,21 @@ interface WithdrawModalProps {
   wallet: WalletState;
   onConfirmWithdraw: (amount: number, address: string) => void;
   onConfirmDeposit: (amount: number) => void;
+  connectedAccount: string | null;
 }
 
-export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose, wallet, onConfirmWithdraw, onConfirmDeposit }) => {
+export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose, wallet, onConfirmWithdraw, onConfirmDeposit, connectedAccount }) => {
   const [activeTab, setActiveTab] = useState<'deposit' | 'withdraw'>('withdraw');
   const [amount, setAmount] = useState('');
   const [address, setAddress] = useState('');
   const [step, setStep] = useState<'details' | '2fa'>('details');
   const [otp, setOtp] = useState('');
+
+  useEffect(() => {
+    if (connectedAccount) {
+      setAddress(connectedAccount);
+    }
+  }, [connectedAccount, isOpen]);
 
   if (!isOpen) return null;
 
@@ -39,7 +45,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose, w
     onClose();
     setStep('details');
     setAmount('');
-    setAddress('');
+    setAddress(connectedAccount || '');
     setOtp('');
   };
 
@@ -110,7 +116,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose, w
               <div className="bg-cyan-500/5 border border-cyan-500/20 p-4 rounded-2xl space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <span className="text-[10px] font-mono text-cyan-500 uppercase font-bold block text-center">Your Deposit Address</span>
                 <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl flex items-center justify-between">
-                  <span className="text-[9px] font-mono text-slate-400 truncate pr-4">0xAuraEliteMasterNode_{Math.random().toString(16).slice(2, 12)}</span>
+                  <span className="text-[9px] font-mono text-slate-400 truncate pr-4">{connectedAccount || 'Connect wallet to see address'}</span>
                   <button type="button" className="text-[9px] font-bold text-cyan-400 uppercase hover:text-white transition-colors">Copy</button>
                 </div>
                 <p className="text-[9px] text-slate-500 italic text-center leading-relaxed">External confirmations usually settle in 3-5 blocks.</p>
@@ -136,11 +142,12 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose, w
 
         <button 
           type="submit"
+          disabled={!connectedAccount}
           className={`w-full font-black py-4 rounded-2xl transition-all uppercase tracking-widest text-xs shadow-lg ${
             activeTab === 'deposit' ? 'bg-cyan-500 text-slate-950 hover:bg-cyan-400' : 'bg-white text-black hover:bg-slate-100'
-          }`}
+          } disabled:opacity-50 disabled:cursor-not-allowed`}
         >
-          {activeTab === 'deposit' ? 'Confirm Inbound Deposit' : (step === 'details' ? 'Next Protocol Stage' : 'Finalize Transfer')}
+          { !connectedAccount ? 'Connect Wallet First' : (activeTab === 'deposit' ? 'Confirm Inbound Deposit' : (step === 'details' ? 'Next Protocol Stage' : 'Finalize Transfer')) }
         </button>
       </form>
     </div>

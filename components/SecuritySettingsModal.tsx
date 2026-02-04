@@ -1,21 +1,22 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { UserProfile, AuditEntry } from '../types';
-import { XMarkIcon, ShieldCheckIcon, CpuChipIcon, KeyIcon } from './Icons';
+import { XMarkIcon, ShieldCheckIcon, CpuChipIcon, KeyIcon, IpfsIcon } from './Icons';
 
 interface SecuritySettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   profile: UserProfile;
   auditLogs: AuditEntry[];
+  onIpfsSave: () => void;
+  isIpfsSaving: boolean;
 }
 
-export const SecuritySettingsModal: React.FC<SecuritySettingsModalProps> = ({ isOpen, onClose, profile, auditLogs }) => {
+export const SecuritySettingsModal: React.FC<SecuritySettingsModalProps> = ({ isOpen, onClose, profile, auditLogs, onIpfsSave, isIpfsSaving }) => {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/90 z-[100] flex justify-center items-center backdrop-blur-xl p-4">
-      <div className="bg-slate-900 rounded-[3rem] border border-cyan-500/20 w-full max-w-2xl shadow-[0_0_100px_rgba(6,182,212,0.1)] overflow-hidden flex flex-col h-[80vh]">
+      <div className="bg-slate-900 rounded-[3rem] border border-cyan-500/20 w-full max-w-2xl shadow-[0_0_100px_rgba(6,182,212,0.1)] overflow-hidden flex flex-col h-auto max-h-[85vh]">
         <div className="p-10 border-b border-slate-800/50 flex justify-between items-center">
           <div>
             <h2 className="text-3xl font-black font-space-grotesk text-white tracking-tighter uppercase italic flex items-center">
@@ -60,6 +61,24 @@ export const SecuritySettingsModal: React.FC<SecuritySettingsModalProps> = ({ is
                     <span className="text-white font-mono">Cloudflare V3</span>
                  </div>
               </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <h3 className="text-sm font-black font-space-grotesk text-white uppercase tracking-widest">Decentralized Backup</h3>
+            <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800/30 flex items-center justify-between">
+              <div>
+                <p className="text-sm text-white font-bold">Save Bot Configuration to IPFS</p>
+                <p className="text-xs text-slate-500 mt-1">Create an immutable, decentralized backup of your active strategies.</p>
+              </div>
+              <button
+                onClick={onIpfsSave}
+                disabled={isIpfsSaving}
+                className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 px-5 rounded-xl transition-all disabled:opacity-50 flex items-center text-xs uppercase"
+              >
+                <IpfsIcon className={`h-4 w-4 mr-2 ${isIpfsSaving ? 'animate-spin' : ''}`} />
+                {isIpfsSaving ? 'Encrypting...' : 'Save Snapshot'}
+              </button>
             </div>
           </div>
 

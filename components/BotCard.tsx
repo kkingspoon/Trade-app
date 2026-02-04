@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Bot, BotStatus, BotStrategy } from '../types';
 import { 
   BrainCircuitIcon, BeakerIcon, ArrowDownTrayIcon, ChartBarIcon, 
-  CpuChipIcon, ListBulletIcon, SparklesIcon, WalletIcon 
+  CpuChipIcon, ListBulletIcon, SparklesIcon, WalletIcon, GlobeIcon
 } from './Icons';
 
 interface BotCardProps {
@@ -48,6 +48,8 @@ export const BotCard: React.FC<BotCardProps> = ({ bot, ...props }) => {
     }
   }, [bot.pnl]);
 
+  const timeAgo = bot.lastChainSync ? Math.floor((Date.now() - bot.lastChainSync) / 60000) : null;
+
   return (
     <div className="glass-panel rounded-[2rem] overflow-hidden border border-slate-800 hover:border-cyan-500/50 transition-all duration-500 group relative">
       <div className={`absolute top-0 left-0 w-1 h-full transition-colors duration-500 ${isRunning ? 'bg-green-500 shadow-[0_0_10px_#22c55e]' : 'bg-slate-700'}`} />
@@ -78,39 +80,27 @@ export const BotCard: React.FC<BotCardProps> = ({ bot, ...props }) => {
             </span>
           </div>
           <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800 group-hover:border-slate-700 transition-colors flex flex-col justify-center">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest block mb-2">Total Yield</span>
-            <span className={`text-2xl font-mono font-black whitespace-nowrap transition-all duration-300 ${flashClass || pnlColor}`}>
-                {bot.pnlPercent.toFixed(2)}%
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest block mb-2">Win Rate</span>
+            <span className={`text-2xl font-mono font-black whitespace-nowrap transition-all duration-300 ${isRunning ? 'text-cyan-400' : 'text-slate-500'}`}>
+                {bot.winRate.toFixed(1)}%
             </span>
           </div>
         </div>
         
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-slate-900/50 p-3 rounded-2xl border border-slate-800/50 shadow-inner group-hover:border-slate-700/50 transition-colors">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest block">7D YIELD</span>
-            <span className={`text-xl font-mono font-black whitespace-nowrap ${bot.weeklyPnlPercent >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-              {bot.weeklyPnlPercent >= 0 ? '+' : ''}{bot.weeklyPnlPercent.toFixed(2)}%
-            </span>
-          </div>
-          <div className="bg-slate-900/50 p-3 rounded-2xl border border-slate-800/50 shadow-inner group-hover:border-slate-700/50 transition-colors">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest block">30D YIELD</span>
-            <span className={`text-xl font-mono font-black whitespace-nowrap ${bot.monthlyPnlPercent >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-              {bot.monthlyPnlPercent >= 0 ? '+' : ''}{bot.monthlyPnlPercent.toFixed(2)}%
-            </span>
-          </div>
-        </div>
-
         <div className="space-y-3 bg-slate-900/30 p-4 rounded-2xl border border-slate-800/50">
             <div className="flex justify-between items-center text-[10px] font-mono font-bold">
-                <span className="text-slate-500 uppercase tracking-widest">Asset Allocation</span>
-                <span className="text-white">${bot.collateral.toLocaleString()}</span>
+                <span className="text-slate-500 uppercase tracking-widest">Roll-up Sync</span>
+                <span className="text-white flex items-center gap-1">
+                    <GlobeIcon className={`h-3 w-3 ${isRunning ? 'text-green-400' : 'text-slate-600'}`} />
+                    {timeAgo === null ? 'NEVER' : timeAgo === 0 ? 'JUST NOW' : `${timeAgo}M AGO`}
+                </span>
             </div>
-            <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                <div className="bg-gradient-to-r from-cyan-500 to-purple-500 h-full transition-all duration-1000 shadow-[0_0_10px_rgba(6,182,212,0.5)]" style={{ width: `${bot.winRate}%` }} />
+            <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
+                <div className="bg-gradient-to-r from-cyan-500 to-purple-500 h-full transition-all duration-1000" style={{ width: `${isRunning ? 100 : 0}%` }} />
             </div>
             <div className="flex justify-between text-[10px] font-mono font-bold">
-                <span className="text-slate-500 uppercase tracking-widest">Efficiency Rating</span>
-                <span className="text-cyan-400">{bot.winRate.toFixed(1)}%</span>
+                <span className="text-slate-500 uppercase tracking-widest">Efficiency Threshold</span>
+                <span className="text-cyan-400">OPTIMIZED</span>
             </div>
         </div>
 
@@ -123,8 +113,8 @@ export const BotCard: React.FC<BotCardProps> = ({ bot, ...props }) => {
           
           <div className="flex items-center space-x-3">
              <div className="text-right">
-                <span className={`text-[8px] font-mono font-black block leading-none transition-colors duration-300 ${isRunning ? 'text-green-500' : 'text-slate-600'}`}>{isRunning ? 'EXECUTING' : 'READY'}</span>
-                <span className="text-[10px] font-mono text-slate-500">{bot.totalTrades} TRADES</span>
+                <span className={`text-[8px] font-mono font-black block leading-none transition-colors duration-300 ${isRunning ? 'text-green-500' : 'text-slate-600'}`}>{isRunning ? 'EXECUTING' : 'IDLE'}</span>
+                <span className="text-[10px] font-mono text-slate-500">{bot.totalTrades} OPS</span>
              </div>
              <button 
                 onClick={props.onToggleStatus}

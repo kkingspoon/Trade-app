@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { WithdrawModal } from './components/WithdrawModal';
@@ -10,6 +9,7 @@ import { AgentModal } from './components/AgentModal';
 import { TradeLogModal } from './components/TradeLogModal';
 import { FallingCoins } from './components/FallingCoins';
 import { ApiKeysModal } from './components/ApiKeysModal';
+import { ConnectWalletModal } from './components/ConnectWalletModal';
 import { InstallWalletModal } from './components/InstallWalletModal';
 import { PriceAlertsModal } from './components/PriceAlertsModal';
 import { NotificationToast } from './components/NotificationToast';
@@ -21,12 +21,14 @@ import { MonetizationModal } from './components/MonetizationModal';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { PatternRecognitionModal } from './components/PatternRecognitionModal';
 import { BacktestingModal } from './components/BacktestingModal';
-import { getTradingAnalysis, getAgentResponse, getPatternAnalysis, getBacktestingAnalysis } from './services/geminiService';
+import { EarnModal } from './components/EarnModal';
+import { useWallet } from './hooks/useWallet';
+import { getTradingAnalysis, getAgentResponse, getPatternAnalysis, getBacktestingAnalysis, generateEarnQuiz } from './services/geminiService';
 import { 
   Bot, BotStatus, BotStrategy, ChatMessage, ApiKey, 
   PriceAlert, AppNotification, WhitelistPair, 
   WalletState, Transaction, UserProfile, AuditEntry, BotData, RadarSignal, DailySignal, MarketPattern,
-  BacktestResults
+  BacktestResults, EarnMission, PortfolioMetrics
 } from './types';
 
 const initialBots: Bot[] = [
@@ -46,7 +48,27 @@ const initialBots: Bot[] = [
     riskLevel: 'Medium',
     collateral: 5000,
     trades: [],
-    walletAddress: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F'
+    walletAddress: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
+    lastChainSync: Date.now() - 3600000
+  },
+  {
+    id: 'b-002',
+    name: 'Neural Ethos ETH',
+    pair: 'ETH/USDT',
+    strategy: BotStrategy.AI_MOMENTUM,
+    status: BotStatus.STOPPED,
+    pnl: -45.20,
+    pnlPercent: -1.5,
+    weeklyPnlPercent: -0.8,
+    monthlyPnlPercent: 3.2,
+    uptime: '2d 12h',
+    totalTrades: 124,
+    winRate: 62.5,
+    riskLevel: 'High',
+    collateral: 3000,
+    trades: [],
+    walletAddress: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
+    lastChainSync: Date.now() - 7200000
   }
 ];
 
@@ -67,6 +89,8 @@ const initialDailySignals: DailySignal[] = [
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const walletApi = useWallet();
+  
   const [userProfile] = useState<UserProfile>({
     id: 'U-9921',
     email: 'alpha.trader@aura.elite',
@@ -78,17 +102,25 @@ const App: React.FC = () => {
 
   const [wallet, setWallet] = useState<WalletState>({
     available: 15420.50,
-    allocated: 5000,
+    allocated: 8000,
     pending: 0,
     currency: 'USDT',
-    auraBalance: 12500
+    auraBalance: 12500,
+    lastFaucetClaim: 0
+  });
+
+  const [portfolioMetrics, setPortfolioMetrics] = useState<PortfolioMetrics>({
+    totalWinRate: 68.35,
+    activeNodes: 1,
+    lastRollupHash: '0x3f...9e2a',
+    blockHeight: 19842031
   });
 
   const [transactions, setTransactions] = useState<Transaction[]>([
     { id: 'tx-1', timestamp: Date.now() - 86400000, type: 'deposit', amount: 20000, status: 'completed', txHash: '0x55a...f91' },
     { id: 'tx-2', timestamp: Date.now() - 43200000, type: 'allocation', amount: 5000, status: 'completed' }
   ]);
-
+  
   const [auditLogs, setAuditLogs] = useState<AuditEntry[]>([
     { id: 'aud-1', timestamp: Date.now() - 3600000, event: 'API Key Verification Succeeded', severity: 'low' },
     { id: 'aud-2', timestamp: Date.now() - 1800000, event: 'New Bot "Quantum Alpha" Initialized', severity: 'medium' }
@@ -97,6 +129,8 @@ const App: React.FC = () => {
   const [bots, setBots] = useState<Bot[]>(initialBots);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isPortfolioSyncing, setIsPortfolioSyncing] = useState(false);
+  const [isIpfsSaving, setIsIpfsSaving] = useState(false);
   const [radarSignals, setRadarSignals] = useState<RadarSignal[]>(initialRadarSignals);
   const [dailySignals, setDailySignals] = useState<DailySignal[]>(initialDailySignals);
   const [whitelist, setWhitelist] = useState<WhitelistPair[]>([
@@ -109,9 +143,10 @@ const App: React.FC = () => {
   
   const [modals, setModals] = useState({
     withdraw: false, analysis: false, createBot: false, agent: false,
-    tradeLog: false, apiKeys: false, installWallet: false, chart: false,
+    tradeLog: false, apiKeys: false, connectWallet: false, chart: false,
     alerts: false, whitelist: false, transactions: false, security: false,
-    monetization: false, patternRecognition: false, backtesting: false
+    monetization: false, patternRecognition: false, backtesting: false,
+    installWallet: false, earn: false
   });
 
   const [confirmation, setConfirmation] = useState({
@@ -122,11 +157,24 @@ const App: React.FC = () => {
 
   const [patternState, setPatternState] = useState({ loading: false, patterns: [] as MarketPattern[] });
   const [backtestState, setBacktestState] = useState<{loading: boolean; results: BacktestResults | null}>({ loading: false, results: null });
+  const [earnMission, setEarnMission] = useState<{loading: boolean; mission: EarnMission | null}>({ loading: false, mission: null });
   const [selectedBot, setSelectedBot] = useState<Bot | null>(null);
   const [selectedPair, setSelectedPair] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState({ result: '', loading: false });
   const [agentChat, setAgentChat] = useState({ conversation: [] as ChatMessage[], loading: false });
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+
+  // Calculation for global win rate
+  useEffect(() => {
+    if (bots.length === 0) return;
+    const avgWinRate = bots.reduce((acc, bot) => acc + bot.winRate, 0) / bots.length;
+    const runningNodes = bots.filter(b => b.status === BotStatus.RUNNING).length;
+    setPortfolioMetrics(prev => ({ 
+        ...prev, 
+        totalWinRate: avgWinRate,
+        activeNodes: runningNodes
+    }));
+  }, [bots]);
 
   const addNotification = useCallback((title: string, message: string, type: AppNotification['type']) => {
     setNotifications(prev => [{
@@ -143,6 +191,61 @@ const App: React.FC = () => {
   }, []);
   
   const toggleModal = (key: keyof typeof modals, val: boolean) => setModals(prev => ({ ...prev, [key]: val }));
+
+  const simulateTransaction = useCallback(async (title: string, onSuccess: () => void) => {
+    addNotification("Signature Required", `Please approve the "${title}" transaction in your wallet.`, "info");
+    await new Promise(resolve => setTimeout(resolve, 3000)); // Simulate signing
+    addNotification("Transaction Broadcast", `Your "${title}" transaction has been sent to the network.`, "success");
+    onSuccess();
+  }, [addNotification]);
+
+  const handleFetchMission = useCallback(async () => {
+    setEarnMission({ loading: true, mission: null });
+    const mission = await generateEarnQuiz();
+    setEarnMission({ loading: false, mission });
+  }, []);
+
+  const handleOpenEarnModal = () => {
+    toggleModal('earn', true);
+    if (!earnMission.mission) {
+      handleFetchMission();
+    }
+  };
+
+  const handleCompleteMission = (mission: EarnMission) => {
+    setWallet(prev => ({ ...prev, auraBalance: prev.auraBalance + mission.reward }));
+    addTransaction({ type: 'reward', amount: mission.reward, status: 'completed' });
+    addNotification("Neural Reward", `Successfully calibrated! Earned ${mission.reward} $AURA.`, "success");
+    addAudit(`AI Mission Completed: +${mission.reward} $AURA`, 'low');
+    handleFetchMission(); // Load next mission
+  };
+
+  const handleClaimFaucet = () => {
+    const reward = 50;
+    setWallet(prev => ({ ...prev, available: prev.available + reward, lastFaucetClaim: Date.now() }));
+    addTransaction({ type: 'faucet', amount: reward, status: 'completed' });
+    addNotification("Liquidity Claimed", "Energy Reclaim successful. 50 USDT added.", "success");
+    addAudit("Daily Faucet Claimed", "low");
+  };
+
+  const handleSyncPortfolioToChain = useCallback(async () => {
+    setIsPortfolioSyncing(true);
+    addAudit("Portfolio Roll-up Merge Started", "medium");
+    await new Promise(resolve => setTimeout(resolve, 4000));
+    
+    const newHash = '0x' + Math.random().toString(16).slice(2, 42);
+    setPortfolioMetrics(prev => ({
+        ...prev,
+        lastRollupHash: newHash.slice(0, 8) + '...' + newHash.slice(-4),
+        blockHeight: prev.blockHeight + Math.floor(Math.random() * 10) + 1
+    }));
+    
+    setBots(current => current.map(bot => ({ ...bot, lastChainSync: Date.now() })));
+    
+    setIsPortfolioSyncing(false);
+    addNotification("Roll-up Successful", "Portfolio state committed to Chain Layer.", "success");
+    addAudit(`Roll-up Success: Hash ${newHash.slice(0, 10)}...`, "low");
+  }, [addAudit, addNotification]);
 
   const handlePatternAnalysis = useCallback(async () => {
     toggleModal('patternRecognition', true);
@@ -201,40 +304,38 @@ const App: React.FC = () => {
 
   const handleSyncBlockchain = useCallback(async () => {
     setIsSyncing(true);
-    addAudit("Manual Market Re-index Started", "low");
+    addAudit("Global Market Index Sync Started", "low");
     await new Promise(resolve => setTimeout(resolve, 3000));
     setIsSyncing(false);
-    addNotification("Sync Complete", "Market data stream is now fully indexed with the chain.", "info");
-    addAudit("Market Index Sync Successful", "low");
+    addNotification("Market Stream Ready", "Market data pipeline is fully synchronized.", "info");
+    addAudit("Market Stream Index Successful", "low");
   }, [addAudit, addNotification]);
 
   const handleDeposit = async (amount: number) => {
-    addTransaction({ type: 'deposit', amount, status: 'processing' });
-    addNotification("Deposit Incoming", `Network broadcast detected for ${amount} ${wallet.currency}.`, "info");
-    addAudit(`Deposit request detected for ${amount} ${wallet.currency}`, 'low');
-    setTimeout(() => {
-      setTransactions(prev => prev.map(tx => tx.type === 'deposit' && tx.status === 'processing' ? { ...tx, status: 'completed', txHash: '0x' + Math.random().toString(16).slice(2, 12) } : tx));
-      setWallet(prev => ({ ...prev, available: prev.available + amount }));
-      addNotification("Deposit Confirmed", `${amount} ${wallet.currency} credited to liquidity pool.`, "success");
-      addAudit(`Account credited: +${amount} ${wallet.currency}`, 'low');
-    }, 4000);
+    simulateTransaction('Deposit', () => {
+        addTransaction({ type: 'deposit', amount, status: 'processing' });
+        setTimeout(() => {
+          setTransactions(prev => prev.map(tx => tx.type === 'deposit' && tx.status === 'processing' ? { ...tx, status: 'completed', txHash: '0x' + Math.random().toString(16).slice(2, 12) } : tx));
+          setWallet(prev => ({ ...prev, available: prev.available + amount }));
+          addNotification("Deposit Confirmed", `${amount} ${wallet.currency} credited to your balance.`, "success");
+          addAudit(`Account credited: +${amount} ${wallet.currency}`, 'low');
+        }, 4000);
+    });
   };
 
   const handleWithdrawal = async (amount: number, address: string) => {
     if (amount > wallet.available) return;
-    setWallet(prev => ({ ...prev, available: prev.available - amount, pending: prev.pending + amount }));
-    addTransaction({ type: 'withdraw', amount, status: 'pending' });
-    addNotification("Withdrawal Initiated", `Queueing ${amount} ${wallet.currency} for on-chain broadcast.`, "info");
-    addAudit(`Withdrawal requested to ${address.substring(0, 8)}...`, 'medium');
-    setTimeout(() => {
-      setTransactions(prev => prev.map(tx => tx.type === 'withdraw' && tx.status === 'pending' ? { ...tx, status: 'processing' } : tx));
-      setTimeout(() => {
-        setTransactions(prev => prev.map(tx => tx.type === 'withdraw' && tx.status === 'processing' ? { ...tx, status: 'completed', txHash: '0x' + Math.random().toString(16).slice(2, 12) } : tx));
-        setWallet(prev => ({ ...prev, pending: prev.pending - amount }));
-        addNotification("Transaction Confirmed", "On-chain verification complete.", "success");
-        addAudit(`Withdrawal finalized: -${amount} ${wallet.currency}`, 'low');
-      }, 5000);
-    }, 3000);
+    simulateTransaction('Withdrawal', () => {
+        setWallet(prev => ({ ...prev, available: prev.available - amount, pending: prev.pending + amount }));
+        addTransaction({ type: 'withdraw', amount, status: 'pending' });
+        addAudit(`Withdrawal requested to ${address.substring(0, 8)}...`, 'medium');
+        setTimeout(() => {
+          setTransactions(prev => prev.map(tx => tx.type === 'withdraw' && tx.status === 'pending' ? { ...tx, status: 'completed', txHash: '0x' + Math.random().toString(16).slice(2, 12) } : tx));
+          setWallet(prev => ({ ...prev, pending: prev.pending - amount }));
+          addNotification("Transaction Confirmed", "On-chain verification complete.", "success");
+          addAudit(`Withdrawal finalized: -${amount} ${wallet.currency}`, 'low');
+        }, 5000);
+    });
   };
 
   const handleToggleBotStatus = (botId: string) => {
@@ -243,16 +344,17 @@ const App: React.FC = () => {
     const isActivating = bot.status === BotStatus.STOPPED;
     handleRequestConfirmation(
         isActivating ? 'Confirm Activation' : 'Confirm Deactivation',
-        `Are you sure you want to ${isActivating ? 'activate' : 'deactivate'} the "${bot.name}" protocol?`,
+        `This will ${isActivating ? 'start' : 'stop'} the "${bot.name}" protocol on-chain.`,
         () => {
-            setBots(current => current.map(b => {
-                if (b.id === botId) {
-                    if (isActivating) addAudit(`Protocol Start: ${b.name}`, 'low');
-                    else addAudit(`Protocol Halt: ${b.name}`, 'medium');
-                    return { ...b, status: isActivating ? BotStatus.RUNNING : BotStatus.STOPPED };
-                }
-                return b;
-            }));
+            simulateTransaction(isActivating ? 'Activate Protocol' : 'Halt Protocol', () => {
+                setBots(current => current.map(b => {
+                    if (b.id === botId) {
+                        addAudit(`Protocol ${isActivating ? 'Start' : 'Halt'}: ${b.name}`, 'low');
+                        return { ...b, status: isActivating ? BotStatus.RUNNING : BotStatus.STOPPED };
+                    }
+                    return b;
+                }));
+            });
         },
         isActivating ? 'Activate' : 'Deactivate',
         'warning'
@@ -265,19 +367,22 @@ const App: React.FC = () => {
       addNotification("Insufficient Capital", "Main wallet balance too low for this allocation.", "warning");
       return;
     }
-    const newBot: Bot = {
-      id: `bot-${Date.now()}`, name: data.name, pair: data.pair, strategy: data.strategy,
-      status: BotStatus.STOPPED, pnl: 0, pnlPercent: 0, uptime: '0h',
-      totalTrades: 0, winRate: 0, riskLevel: 'Medium', collateral: investment,
-      trades: [], walletAddress: data.walletAddress || masterWallet || undefined,
-      weeklyPnlPercent: 0, monthlyPnlPercent: 0
-    };
-    setWallet(prev => ({ ...prev, available: prev.available - investment, allocated: prev.allocated + investment }));
-    setBots(prev => [...prev, newBot]);
-    addTransaction({ type: 'allocation', amount: investment, status: 'completed' });
-    toggleModal('createBot', false);
-    addNotification("Bot Active", `${newBot.name} is now monitoring the ${newBot.pair} stream.`, "success");
-    addAudit(`Strategic allocation of ${investment} to ${newBot.name}`);
+
+    simulateTransaction('Deploy Strategy', () => {
+        const newBot: Bot = {
+          id: `bot-${Date.now()}`, name: data.name, pair: data.pair, strategy: data.strategy,
+          status: BotStatus.STOPPED, pnl: 0, pnlPercent: 0, uptime: '0h',
+          totalTrades: 0, winRate: 50, riskLevel: data.riskLevel, collateral: investment,
+          trades: [], walletAddress: walletApi.connectedAccount || undefined,
+          weeklyPnlPercent: 0, monthlyPnlPercent: 0, lastChainSync: Date.now()
+        };
+        setWallet(prev => ({ ...prev, available: prev.available - investment, allocated: prev.allocated + investment }));
+        setBots(prev => [...prev, newBot]);
+        addTransaction({ type: 'allocation', amount: investment, status: 'completed' });
+        toggleModal('createBot', false);
+        addNotification("Bot Active", `${newBot.name} is now monitoring the ${newBot.pair} stream.`, "success");
+        addAudit(`Strategic allocation of ${investment} to ${newBot.name}`);
+    });
   };
   
   const handleProtocolReset = () => {
@@ -285,14 +390,26 @@ const App: React.FC = () => {
         'System Halt Confirmation',
         'This will immediately stop and delete all active bot protocols. This action is irreversible.',
         () => {
+          simulateTransaction('System Halt', () => {
             addAudit("System Reset Protocol Triggered", "high");
             setBots([]);
             addNotification("System Halt", "All bot protocols have been purged.", "warning");
+          });
         },
         'Confirm System Halt',
         'danger'
     );
   };
+  
+  const handleIpfsSave = useCallback(async () => {
+    setIsIpfsSaving(true);
+    addAudit("IPFS snapshot initiated", "low");
+    await new Promise(resolve => setTimeout(resolve, 2500));
+    const mockCid = `bafybeig...${Math.random().toString(16).slice(2, 10)}`;
+    addNotification("Decentralized Backup", `Configuration saved to IPFS. CID: ${mockCid}`, "success");
+    addAudit(`IPFS snapshot successful: ${mockCid}`);
+    setIsIpfsSaving(false);
+  }, [addAudit, addNotification]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -310,7 +427,8 @@ const App: React.FC = () => {
           return { 
             ...bot, pnl: bot.pnl + netPnl, 
             pnlPercent: bot.pnlPercent + (netPnl / bot.collateral * 100),
-            totalTrades: Math.random() > 0.95 ? bot.totalTrades + 1 : bot.totalTrades
+            totalTrades: Math.random() > 0.95 ? bot.totalTrades + 1 : bot.totalTrades,
+            winRate: Math.max(40, Math.min(95, bot.winRate + (Math.random() - 0.5)))
           };
         }
         return bot;
@@ -355,19 +473,30 @@ const App: React.FC = () => {
       
       <div className="relative z-10 flex flex-col min-h-screen">
         <Header 
-          isAdmin={isAdmin} onToggleAdmin={() => setIsAdmin(!isAdmin)} 
           isSyncing={isSyncing} onSync={handleSyncBlockchain}
           onOpenAlerts={() => toggleModal('alerts', true)}
           alertCount={alerts.filter(a => a.isActive).length}
-          masterWallet={masterWallet}
-          onSyncWallet={() => toggleModal('security', true)}
+          onOpenSecurityModal={() => toggleModal('security', true)}
           onOpenPatternRecognition={handlePatternAnalysis}
+          connectedAccount={walletApi.connectedAccount}
+          onConnectWallet={() => {
+            if (walletApi.hasProvider) {
+              toggleModal('connectWallet', true);
+            } else {
+              toggleModal('installWallet', true);
+            }
+          }}
+          onDisconnectWallet={walletApi.disconnectWallet}
         />
         
         <main className="flex-grow max-w-7xl mx-auto w-full px-4 py-8">
           <Dashboard
             bots={bots} isAdmin={isAdmin} wallet={wallet}
             radarSignals={radarSignals} dailySignals={dailySignals}
+            connectedAccount={walletApi.connectedAccount}
+            portfolioMetrics={portfolioMetrics}
+            isPortfolioSyncing={isPortfolioSyncing}
+            onSyncPortfolio={handleSyncPortfolioToChain}
             onToggleBotStatus={handleToggleBotStatus}
             onSyncWallet={(id) => toggleModal('security', true)}
             onWithdraw={() => toggleModal('withdraw', true)}
@@ -386,6 +515,7 @@ const App: React.FC = () => {
             onOpenTransactions={() => toggleModal('transactions', true)}
             onOpenMonetization={() => toggleModal('monetization', true)}
             onOpenBacktesting={() => toggleModal('backtesting', true)}
+            onOpenEarnModal={handleOpenEarnModal}
             onProtocolReset={handleProtocolReset}
           />
         </main>
@@ -410,6 +540,7 @@ const App: React.FC = () => {
       <WithdrawModal 
         isOpen={modals.withdraw} onClose={() => toggleModal('withdraw', false)} 
         wallet={wallet} onConfirmWithdraw={handleWithdrawal} onConfirmDeposit={handleDeposit}
+        connectedAccount={walletApi.connectedAccount}
       />
       <MonetizationModal isOpen={modals.monetization} onClose={() => toggleModal('monetization', false)} profile={userProfile} wallet={wallet} />
       <AnalysisModal isOpen={modals.analysis} onClose={() => toggleModal('analysis', false)} {...analysis} bot={selectedBot} />
@@ -435,13 +566,37 @@ const App: React.FC = () => {
       />
       <ApiKeysModal isOpen={modals.apiKeys} onClose={() => toggleModal('apiKeys', false)} apiKeys={apiKeys} onAddKey={() => {}} onDeleteKey={() => {}} />
       <TransactionHistoryModal isOpen={modals.transactions} onClose={() => toggleModal('transactions', false)} transactions={transactions} />
-      <SecuritySettingsModal isOpen={modals.security} onClose={() => toggleModal('security', false)} profile={userProfile} auditLogs={auditLogs} />
+      <SecuritySettingsModal 
+        isOpen={modals.security} 
+        onClose={() => toggleModal('security', false)} 
+        profile={userProfile} 
+        auditLogs={auditLogs} 
+        onIpfsSave={handleIpfsSave}
+        isIpfsSaving={isIpfsSaving}
+      />
       <WhitelistModal 
         isOpen={modals.whitelist} onClose={() => toggleModal('whitelist', false)} 
         whitelist={whitelist} onTogglePair={() => {}} onAddPair={() => {}} onDeletePair={() => {}}
       />
       <PriceAlertsModal isOpen={modals.alerts} onClose={() => toggleModal('alerts', false)} alerts={alerts} onAddAlert={() => {}} onDeleteAlert={() => {}} onToggleAlert={() => {}} />
-      <InstallWalletModal isOpen={modals.installWallet} onClose={() => toggleModal('installWallet', false)} />
+      <ConnectWalletModal
+        isOpen={modals.connectWallet}
+        onClose={() => toggleModal('connectWallet', false)}
+        walletApi={walletApi}
+      />
+      <InstallWalletModal 
+        isOpen={modals.installWallet}
+        onClose={() => toggleModal('installWallet', false)}
+      />
+      <EarnModal
+        isOpen={modals.earn}
+        onClose={() => toggleModal('earn', false)}
+        onClaimFaucet={handleClaimFaucet}
+        onCompleteMission={handleCompleteMission}
+        isMissionLoading={earnMission.loading}
+        mission={earnMission.mission}
+        lastFaucetClaim={wallet.lastFaucetClaim}
+      />
       <PatternRecognitionModal 
         isOpen={modals.patternRecognition} 
         onClose={() => toggleModal('patternRecognition', false)} 

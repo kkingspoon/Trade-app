@@ -1,4 +1,3 @@
-
 export enum BotStatus {
   RUNNING = 'Running',
   STOPPED = 'Stopped',
@@ -36,15 +35,23 @@ export interface Bot {
   collateral: number; // Allocated capital
   trades: Trade[];
   walletAddress?: string;
+  lastChainSync?: number;
 }
 
-// Added BotData interface for bot creation
 export interface BotData {
   name: string;
   pair: string;
   strategy: BotStrategy;
   investment?: string;
   walletAddress?: string;
+  riskLevel: 'Low' | 'Medium' | 'High';
+}
+
+export interface PortfolioMetrics {
+  totalWinRate: number;
+  activeNodes: number;
+  lastRollupHash: string;
+  blockHeight: number;
 }
 
 export interface WalletState {
@@ -53,12 +60,30 @@ export interface WalletState {
   pending: number;
   currency: string;
   auraBalance: number;
+  lastFaucetClaim?: number;
+}
+
+export interface WalletHook {
+  connectedAccount: string | null;
+  connectWallet: () => Promise<void>;
+  disconnectWallet: () => void;
+  error: string | null;
+  loading: boolean;
+  hasProvider: boolean | null;
+}
+
+export interface EarnMission {
+  id: string;
+  question: string;
+  options: string[];
+  correctAnswer: number;
+  reward: number;
 }
 
 export interface Transaction {
   id: string;
   timestamp: number;
-  type: 'deposit' | 'withdraw' | 'allocation' | 'pnl_sync' | 'fee_deduction';
+  type: 'deposit' | 'withdraw' | 'allocation' | 'pnl_sync' | 'fee_deduction' | 'reward' | 'faucet';
   amount: number;
   status: 'pending' | 'processing' | 'completed' | 'failed';
   txHash?: string;

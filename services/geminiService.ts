@@ -1,6 +1,5 @@
-
-import { GoogleGenAI } from "@google/genai";
-import { Bot, BotStrategy } from "../types";
+import { GoogleGenAI, Type } from "@google/genai";
+import { Bot, BotStrategy, EarnMission } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -64,6 +63,53 @@ export async function getAgentResponse(bot: Bot, query: string): Promise<string>
         return response.text || "Agent offline.";
     } catch (error) {
         return "Neural link failed.";
+    }
+}
+
+export async function generateEarnQuiz(): Promise<EarnMission> {
+    const prompt = `Generate a highly technical multiple-choice question about blockchain technology, decentralized finance, or quantitative trading. 
+    The question should be challenging for a pro trader. 
+    Include 4 options and the index of the correct answer (0-3).
+    Format as JSON.`;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        question: { type: Type.STRING },
+                        options: { 
+                            type: Type.ARRAY, 
+                            items: { type: Type.STRING },
+                            description: "Exactly 4 options"
+                        },
+                        correctAnswer: { type: Type.INTEGER },
+                        reward: { type: Type.NUMBER, description: "A random reward between 50 and 200 $AURA tokens" }
+                    },
+                    required: ["question", "options", "correctAnswer", "reward"]
+                }
+            }
+        });
+        const data = JSON.parse(response.text || '{}');
+        return {
+            id: `mission-${Date.now()}`,
+            question: data.question,
+            options: data.options,
+            correctAnswer: data.correctAnswer,
+            reward: data.reward || 100
+        };
+    } catch (error) {
+        return {
+            id: 'err',
+            question: "What is the primary function of a decentralized exchange (DEX) liquidity pool?",
+            options: ["To store user passwords", "To facilitate trades without a centralized order book", "To mine new Bitcoin", "To regulate government currencies"],
+            correctAnswer: 1,
+            reward: 50
+        };
     }
 }
 

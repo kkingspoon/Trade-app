@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 type IconProps = React.SVGProps<SVGSVGElement>;
@@ -19,6 +18,24 @@ export const ReceiptPercentIcon: React.FC<IconProps> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-1.5h5.25m-5.25 0h5.25m-5.25 0h5.25m-5.25 0h5.25M3 4.5h12V18a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18V4.5z" />
     </svg>
+);
+
+export const GiftIcon: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H4.5a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h17.25c.621 0 1.125-.504 1.125-1.125v-1.5a1.125 1.125 0 00-1.125-1.125h-17.25a1.125 1.125 0 00-1.125 1.125v1.5a1.125 1.125 0 001.125 1.125z" />
+  </svg>
+);
+
+export const CurrencyDollarIcon: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+export const AcademicCapIcon: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147L12 14.652l7.74-4.505a.75.75 0 000-1.294L12 4.352 4.26 8.853a.75.75 0 000 1.294zm1.61 6.057l5.88 3.422a.75.75 0 00.75 0l5.88-3.422a.75.75 0 000-1.294l-5.88 3.422a.75.75 0 01-.75 0l-5.88-3.422a.75.75 0 000 1.294z" />
+  </svg>
 );
 
 export const ExclamationTriangleIcon: React.FC<IconProps> = (props) => (
@@ -161,7 +178,6 @@ export const TrashIcon: React.FC<IconProps> = (props) => (
   </svg>
 );
 
-// Added PuzzlePieceIcon for InstallWalletModal
 export const PuzzlePieceIcon: React.FC<IconProps> = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 6.087c0-.355.186-.676.401-.959.221-.29.349-.634.349-.978 0-.344-.128-.688-.349-.978-.215-.283-.401-.604-.401-.959a.75.75 0 00-1.5 0c0 .355.186.676.401.959.221-.29.349-.634.349-.978 0 .344-.128-.688-.349-.978-.215-.283-.401-.604-.401-.959a.75.75 0 001.5 0zM12 7.5a2.25 2.25 0 012.25 2.25v6.75A2.25 2.25 0 0112 18.75h-6.75A2.25 2.25 0 013 16.5v-6.75A2.25 2.25 0 015.25 7.5H12z" />
@@ -172,4 +188,25 @@ export const Squares2X2Icon: React.FC<IconProps> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
     </svg>
+);
+
+export const MetamaskIcon: React.FC<IconProps> = (props) => (
+    <svg fill="currentColor" viewBox="0 0 24 24" {...props}>
+        <path d="M12 24C5.37 24 0 18.63 0 12S5.37 0 12 0s12 5.37 12 12-5.37 12-12 12zm0-22C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+        <path d="M12.35,8.85l-1.1,1.1c-0.39,0.39-0.39,1.02,0,1.41l1.1,1.1c0.39,0.39,1.02,0.39,1.41,0l1.1-1.1c0.39-0.39,0.39-1.02,0-1.41l-1.1-1.1C13.37,8.46,12.74,8.46,12.35,8.85z"/>
+        <path d="M16,14.5c-0.28,0-0.53,0.11-0.71,0.29l-2.58,2.58c-0.18,0.18-0.44,0.29-0.71,0.29s-0.53-0.11-0.71-0.29l-2.58-2.58C8.53,14.61,8.28,14.5,8,14.5c-0.55,0-1,0.45-1,1s0.45,1,1,1c0.28,0,0.53-0.11,0.71-0.29l2.58,2.58c0.95,0.95,2.48,0.95,3.43,0l2.58-2.58c0.18-0.18,0.44-0.29,0.71-0.29c0.55,0,1-0.45,1-1S16.55,14.5,16,14.5z"/>
+    </svg>
+);
+
+export const IpfsIcon: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 2a10 10 0 100 20 10 10 0 000-20z" />
+    </svg>
+);
+
+export const LinkIcon: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+  </svg>
 );

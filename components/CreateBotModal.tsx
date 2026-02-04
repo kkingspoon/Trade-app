@@ -1,4 +1,3 @@
-
 import React, { useState, FormEvent } from 'react';
 import { BotStrategy, BotData, WhitelistPair } from '../types';
 // Added ShieldCheckIcon to the list of imports from Icons
@@ -21,6 +20,14 @@ export const CreateBotModal: React.FC<CreateBotModalProps> = ({ isOpen, onClose,
   const [walletAddress, setWalletAddress] = useState(masterWallet || '');
   const [useMasterWallet, setUseMasterWallet] = useState(!!masterWallet);
   const [investment, setInvestment] = useState('1000');
+  const [riskLevel, setRiskLevel] = useState<'Low' | 'Medium' | 'High'>('Medium');
+
+  const riskLevels: Array<'Low' | 'Medium' | 'High'> = ['Low', 'Medium', 'High'];
+  const riskConfig = {
+    Low: { color: 'bg-green-500', position: 'left-[16.6%]' },
+    Medium: { color: 'bg-yellow-500', position: 'left-1/2' },
+    High: { color: 'bg-red-500', position: 'left-[83.3%]' }
+  };
 
   if (!isOpen) return null;
 
@@ -32,7 +39,8 @@ export const CreateBotModal: React.FC<CreateBotModalProps> = ({ isOpen, onClose,
         pair, 
         strategy, 
         investment,
-        walletAddress: useMasterWallet ? (masterWallet || walletAddress) : walletAddress 
+        walletAddress: useMasterWallet ? (masterWallet || walletAddress) : walletAddress,
+        riskLevel
     });
   };
 
@@ -80,10 +88,10 @@ export const CreateBotModal: React.FC<CreateBotModalProps> = ({ isOpen, onClose,
                 <div className="relative">
                   <input
                     type="number" value={investment} onChange={(e) => setInvestment(e.target.value)}
-                    placeholder="1000" min="100" max={availableBalance} required
+                    placeholder="1000" min="1" max="1000" required
                     className="w-full bg-slate-900 text-white border border-slate-700 rounded-xl p-3 text-sm focus:border-cyan-500 outline-none font-mono pr-20"
                   />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-slate-500 font-bold uppercase">Max: {availableBalance.toLocaleString()}</div>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-slate-500 font-bold uppercase">Max: 1,000</div>
                 </div>
               </div>
             </div>
@@ -97,6 +105,32 @@ export const CreateBotModal: React.FC<CreateBotModalProps> = ({ isOpen, onClose,
                 >
                     {Object.values(BotStrategy).map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
+              </div>
+
+               <div>
+                <label className="block text-[10px] font-mono text-slate-500 uppercase mb-1 font-bold">Risk Profile</label>
+                <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 pt-3">
+                  <div className="relative h-8">
+                    <div className="absolute top-1/2 -translate-y-1/2 w-full h-1 bg-slate-800 rounded-full">
+                      <div className="h-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 rounded-full" />
+                    </div>
+                    <div
+                      className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-slate-700 shadow-md transition-all duration-300 ${riskConfig[riskLevel].color} ${riskConfig[riskLevel].position} -translate-x-1/2`}
+                    />
+                  </div>
+                  <div className="flex justify-between mt-1">
+                    {riskLevels.map((level) => (
+                      <button
+                        type="button"
+                        key={level}
+                        onClick={() => setRiskLevel(level)}
+                        className={`px-2 py-1 text-[10px] font-mono font-bold uppercase tracking-widest transition-colors duration-300 rounded ${riskLevel === level ? 'text-white' : 'text-slate-600 hover:text-slate-400'}`}
+                      >
+                        {level}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
                <div>
